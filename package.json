@@ -1,0 +1,27 @@
+{
+  "name": "lamia-exercise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "engines": {
+    "node": "12.x"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "node .",
+    "watch": "nodemon --watch src -e js --exec npm run build"
+  },
+  "author": "Aapo Hanski",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.4",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "uuid": "^8.1.0"
+  }
+}
