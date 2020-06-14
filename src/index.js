@@ -1,6 +1,14 @@
+const initialMapPosition = { lat: 60.171, lng: 24.941 };
+const initialMapZoom = 13;
+
+let map = null;
 let places = [];
 let selectedPlace = null;
-let map = null;
+let titleRegExp = null;
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
 
 function createMarker(place, map) {
     place.marker = new google.maps.Marker({
@@ -12,6 +20,16 @@ function createMarker(place, map) {
     place.marker.addListener('click', () => {
         showPlaceDetails(place);
     });
+}
+
+function filterPlaceMarkers() {
+    for (let place of places) {
+        if (titleRegExp === null || titleRegExp.test(place.title)) {
+            place.marker.setMap(map);
+        } else {
+            place.marker.setMap(null);
+        }
+    }
 }
 
 function showPlaceDetails(place) {
@@ -153,14 +171,20 @@ function initUi() {
         selectedPlace = null;
         showEditPlaceDetails();
     });
+
+    const titleSearch =  document.getElementById('title-search')
+    titleSearch.addEventListener('input', () => {
+        titleRegExp = titleSearch.value === '' ? null : new RegExp(escapeRegExp(titleSearch.value), 'i');
+        filterPlaceMarkers();
+    });
 }
 
 async function initMap() {
     initUi();
 
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 60.171, lng: 24.941 },
-        zoom: 13
+        center: initialMapPosition,
+        zoom: initialMapZoom
     });
 
     const response = await fetch(`/places`);
