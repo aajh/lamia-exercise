@@ -1,5 +1,6 @@
 let places = [];
 let selectedPlace = null;
+let map = null;
 
 function createMarker(place, map) {
     place.marker = new google.maps.Marker({
@@ -23,6 +24,14 @@ function showPlaceDetails(place) {
         = place.description;
     document.getElementById('place-details__opening-hours').textContent
         = `${place.openingHours.start} - ${place.openingHours.end}`;
+
+    const keywordsEl = document.getElementById('place-details__keywords');
+    keywordsEl.innerHTML = '';
+    for (let keyword of selectedPlace.keywords) {
+        const el = document.createElement('span');
+        el.innerText = keyword.label;
+        keywordsEl.appendChild(el);
+    }
         
     placeDetailsEl.classList.remove('hidden');
 }
@@ -117,7 +126,7 @@ async function savePlaceDetails(formData) {
     submitButton.disabled = false;
 }
 
-function init() {
+function initUi() {
     const placeDetailsEl = document.getElementById('place-details');
     document.getElementById('place-details__close').addEventListener('click', () => {
         placeDetailsEl.classList.add('hidden');
@@ -145,10 +154,10 @@ function init() {
         showEditPlaceDetails();
     });
 }
-init();
 
-let map = null;
 async function initMap() {
+    initUi();
+
     map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 60.171, lng: 24.941 },
         zoom: 13

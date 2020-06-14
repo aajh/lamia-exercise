@@ -51,14 +51,14 @@ function checkPlaceRequestBody(body) {
 }
 
 app.get('/places', (req, res) => {
-    res.json(places);
+    res.json(places.map(p => ({ ...p, keywords: getKeywordsForPlace(p.id) })));
 });
 
 app.get('/places/:id', (req, res) => {
     const place = places.find(p => p.id === req.params.id);
 
     if (place) {
-        res.json(place);
+        res.json({ ...place, keywords: getKeywordsForPlace(place.id) });
     } else {
         res.status(404).json({ error: `place ${req.params.id} not found` });
     }
@@ -92,7 +92,7 @@ app.post('/places', (req, res) => {
     };
     places.push(place);
 
-    res.json(place);
+    res.json({ ...place, keywords: [] });
 });
 
 app.put('/places/:id', (req, res) => {
@@ -120,15 +120,122 @@ app.put('/places/:id', (req, res) => {
         end: openingHours.end
     };
 
-    res.json(place);
+    res.json({ place, keywords: getKeywordsForPlace(place.id) });
 });
 
 app.delete('/places/:id', (req, res) => {
-    const index = places.findIndex(p => p.id == req.params.id);
-    places.splice(index, 1);
-    res.status(200).end();
+    const index = places.findIndex(p => p.id === req.params.id);
+    if (index !== -1) {
+        places.splice(index, 1);
+        res.status(200).end();
+    } else {
+        res.status(404).json({ error: `place ${req.params.id} not found` });
+    }
 });
 
+
+const keywords = [
+    {
+        id: 'c1406745-37bd-4da3-99ec-b40829e7acf2',
+        label: 'Transit',
+        places: ['f92e2a09-fa07-4f7d-b02c-883a81dba496']
+    }
+];
+
+function getKeywordsForPlace(placeId) {
+    return keywords
+        .filter(k => k.places.indexOf(placeId) !== -1)
+        .map(({ id, label }) => ({ id, label }));
+}
+
+app.get('/keywords', (req, res) => {
+    res.json(keywords);
+});
+
+app.get('/keywords/:id', (req, res) => {
+    const keyword = keywords.find(k => k.id === req.params.id);
+
+    if (keyword) {
+        res.json(keyword);
+    } else {
+        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+    }
+});
+
+app.post('/keywords', (req, res) => {
+    if (req.body === undefined) {
+        res.status(400).json({ error: 'invalid request' });
+        return
+    }
+
+    const { label } = req.body;
+    if (!label || typeof label !== 'string') {
+        res.status(400).json({ error: 'invalid request' });
+        return
+    }
+
+    const keyword = {
+        id: uuidv4(),
+        label,
+        places: []
+    }
+    keywords.push(keyword);
+
+    res.json(keyword);
+});
+
+app.put('/keywords/:id', (req, res) => {
+    const keyword = keywords.find(k => k.id === req.params.id);
+    if (!keyword) {
+        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+        return;
+    }
+
+    const { label } = req.body;
+    if (!label || typeof label !== 'string') {
+        res.status(400).json({ error: 'invalid request' });
+        return
+    }
+
+    keyword.label = label;
+
+    res.json(keyword);
+});
+
+app.delete('/keywords/:id', (req, res) => {
+    const index = keywords.findIndex(k => k.id === req.params.id);
+    if (index !== -1) {
+        keywords.splice(index, 1);
+        res.status(200).end();
+    } else {
+        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+    }
+});
+
+app.post('/keywords/:id/places/:placeId', (req, res) => {
+    const keyword = keywords.find(k => k.id === req.params.id);
+    if (!keyword) {
+        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+        return;
+    }
+
+    keyword.places.push(req.parmas.placeId);
+    res.json(keyword);
+});
+
+app.delete('/keywords/:id/places/:placeId', (req, res) => {
+    const keyword = keywords.find(k => k.id === req.params.id);
+    if (!keyword) {
+        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+        return;
+    }
+
+    const index = keyword.places.findIndex(id => id === req.params.placeId);
+    if (index !== -1) {
+        keyword.places.splice(index, 1);
+    }
+    res.status(200).end();
+});
 
 app.use(express.static('dist'));
 app.use((err, req, res, next) => {

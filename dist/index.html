@@ -49,15 +49,16 @@
             <h2 id="place-details__title"></h2>
             <span id="place-details__description"></span>
             <span id="place-details__opening-hours"></span>
+            <div id="place-details__keywords"></div>
         </div>
         <form id="edit-place-details" class="hidden">
             <button id="edit-place-details__close">X</button>
-            <input type="text" name="title" id="edit-place-details__title">
-            <textarea name="description" id="edit-place-details__description"></textarea>
-            <input type="number" name="lat" id="edit-place-details__lat" step="0.0001">
-            <input type="number" name="lng" id="edit-place-details__lng" step="0.0001">
-            <input type="time" name="openingHours.start" id="edit-place-details__opening-hours-start">
-            <input type="time" name="openingHours.end" id="edit-place-details__opening-hours-end">
+            <input type="text" name="title" id="edit-place-details__title" required>
+            <textarea name="description" id="edit-place-details__description" required></textarea>
+            <input type="number" name="lat" id="edit-place-details__lat" step="0.0001" required>
+            <input type="number" name="lng" id="edit-place-details__lng" step="0.0001" required>
+            <input type="time" name="openingHours.start" id="edit-place-details__opening-hours-start" required>
+            <input type="time" name="openingHours.end" id="edit-place-details__opening-hours-end" required>
             <input type="submit" value="Save">
         </form>
         <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDVHL5G3Fo_ZdjGPNCRDK3FEv_kQOeCHM&callback=initMap"></script>
