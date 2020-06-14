@@ -1,0 +1,61 @@
+html, body {
+    font-family: Verdana, sans-serif;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "toolbar toolbar"
+        "details map";
+}
+
+#toolbar {
+    grid-area: toolbar;
+}
+
+#keyword-search-container {
+    position: relative;
+    display: inline-block;
+}
+
+.autocomplete-items {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 99;
+    background-color: white;
+}
+
+.autocomplete-items div {
+    cursor: pointer;
+}
+
+.autocomplete-items div:hover {
+    background-color: #eaeaea; 
+}
+
+#map {
+    height: 100%;
+    grid-area: map;
+}
+
+#place-details {
+    grid-area: details;
+    width: 280px;
+}
+
+#edit-place-details {
+    grid-area: details;
+    width: 280px;
+    background: white;
+}
+
+.hidden {
+    display: none;
+}

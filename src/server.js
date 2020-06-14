@@ -139,6 +139,11 @@ const keywords = [
         id: 'c1406745-37bd-4da3-99ec-b40829e7acf2',
         label: 'Transit',
         places: ['f92e2a09-fa07-4f7d-b02c-883a81dba496']
+    },
+    {
+        id: 'd7b5256e-7c62-48ae-ae87-6a08a9210882',
+        label: 'Store',
+        places: ['56487fc1-398a-4c8d-ab1b-b59fec68ac1b']
     }
 ];
 

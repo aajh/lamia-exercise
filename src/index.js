@@ -2,6 +2,8 @@ const initialMapPosition = { lat: 60.171, lng: 24.941 };
 const initialMapZoom = 13;
 
 let map = null;
+let keywords = [];
+let selectedKeywords = [];
 let places = [];
 let selectedPlace = null;
 let titleRegExp = null;
@@ -10,10 +12,10 @@ function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function createMarker(place, map) {
+function createMarker(place) {
     place.marker = new google.maps.Marker({
         position: place.position,
-        map: map,
+        map,
         title: place.title
     });
 
@@ -24,12 +26,41 @@ function createMarker(place, map) {
 
 function filterPlaceMarkers() {
     for (let place of places) {
-        if (titleRegExp === null || titleRegExp.test(place.title)) {
+        const titleFilter = titleRegExp === null || titleRegExp.test(place.title);
+
+        let keywordFilter = selectedKeywords.length === 0;
+        for (let keyword of selectedKeywords) {
+            if (place.keywords.findIndex(k => k.id === keyword.id) !== -1) {
+                keywordFilter = true;
+                break;
+            }
+        }
+
+        if (titleFilter && keywordFilter) {
             place.marker.setMap(map);
         } else {
             place.marker.setMap(null);
         }
     }
+}
+
+function addKeywordFilter(keyword) {
+    selectedKeywords.push(keyword);
+    const span = document.createElement('span');
+    span.innerText = keyword.label;
+
+    const closeLink = document.createElement('a');
+    closeLink.innerText = 'X';
+    closeLink.addEventListener('click', () => {
+        span.parentNode.removeChild(span);
+        const index = selectedKeywords.indexOf(keyword);
+        selectedKeywords.splice(index, 1);
+        filterPlaceMarkers();
+    });
+    span.appendChild(closeLink);
+
+    document.getElementById('selected-keywords').appendChild(span);
+    filterPlaceMarkers();
 }
 
 function showPlaceDetails(place) {
@@ -135,7 +166,7 @@ async function savePlaceDetails(formData) {
         if (response.ok) {
             const newPlace = await response.json();
             places.push(newPlace);
-            createMarker(newPlace, map);
+            createMarker(newPlace);
             document.getElementById('edit-place-details').classList.add('hidden');
             showPlaceDetails(newPlace);
         }
@@ -144,7 +175,49 @@ async function savePlaceDetails(formData) {
     submitButton.disabled = false;
 }
 
-function initUi() {
+function initKeywordAutocomplete(input) {
+    function closeList() {
+        const list = input.parentNode.querySelector('.autocomplete-items');
+        if (list !== null) {
+            list.parentNode.removeChild(list);
+        }
+    }
+
+    input.addEventListener('input', () => {
+        closeList();
+        if (!input.value) {
+            return;
+        }
+
+        const completionItems = document.createElement('div');
+        completionItems.classList.add('autocomplete-items');
+        input.parentNode.appendChild(completionItems);
+
+        const regExp = new RegExp(escapeRegExp(input.value), 'i');
+
+        for (let keyword of keywords) {
+            if (selectedKeywords.indexOf(keyword) === -1 && regExp.test(keyword.label)) {
+                const option = document.createElement('div');
+                option.innerText = keyword.label;
+
+                const theKeyword = keyword;
+                option.addEventListener('click', () => {
+                    addKeywordFilter(theKeyword);
+                    input.value = '';
+                    closeList();
+                })
+
+                completionItems.appendChild(option);
+            }
+        }
+    });
+
+    document.addEventListener('click', closeList);
+}
+
+async function initUi() {
+    const keywordPromise = fetch('/keywords');
+
     const placeDetailsEl = document.getElementById('place-details');
     document.getElementById('place-details__close').addEventListener('click', () => {
         placeDetailsEl.classList.add('hidden');
@@ -177,6 +250,10 @@ function initUi() {
         titleRegExp = titleSearch.value === '' ? null : new RegExp(escapeRegExp(titleSearch.value), 'i');
         filterPlaceMarkers();
     });
+
+    const response = await keywordPromise;
+    keywords = await response.json();
+    initKeywordAutocomplete(document.getElementById('keyword-search'));
 }
 
 async function initMap() {
@@ -184,14 +261,16 @@ async function initMap() {
 
     map = new google.maps.Map(document.getElementById("map"), {
         center: initialMapPosition,
-        zoom: initialMapZoom
+        zoom: initialMapZoom,
+        disableDefaultUI: true,
+        zoomControl: true
     });
 
     const response = await fetch(`/places`);
     places = await response.json();
 
     for (let place of places) {
-        createMarker(place, map);
+        createMarker(place);
     }
 }
 window.initMap = initMap;
