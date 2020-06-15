@@ -63,6 +63,27 @@ function addKeywordFilter(keyword) {
     filterPlaceMarkers();
 }
 
+async function addKeywordToSelectedPlace(keyword) {
+    const response = await fetch(`/keywords/${keyword.id}/places/${selectedPlace.id}`, {
+        method: 'POST'
+    });
+    if (response.ok) {
+        selectedPlace.keywords.push(keyword);
+        showPlaceDetails(selectedPlace);
+    }
+}
+
+async function removeKeywordFromSelectedPlace(keyword) {
+    const response = await fetch(`/keywords/${keyword.id}/places/${selectedPlace.id}`, {
+        method: 'DELETE'
+    });
+    if (response.ok) {
+        const index = selectedPlace.keywords.findIndex(k => k.id === keyword.id);
+        selectedPlace.keywords.splice(index, 1);
+        showPlaceDetails(selectedPlace);
+    }
+}
+
 function showPlaceDetails(place) {
     selectedPlace = place;
     const placeDetailsEl = document.getElementById('place-details');
@@ -79,6 +100,14 @@ function showPlaceDetails(place) {
     for (let keyword of selectedPlace.keywords) {
         const el = document.createElement('span');
         el.innerText = keyword.label;
+
+        const remove = document.createElement('a');
+        remove.innerText = 'X';
+        remove.addEventListener('click', () => {
+            removeKeywordFromSelectedPlace(keyword);
+        });
+        el.appendChild(remove);
+
         keywordsEl.appendChild(el);
     }
         
@@ -93,6 +122,7 @@ async function deleteSelectedPlace() {
         const index = places.findIndex(p => p.id == selectedPlace.id);
         places.splice(index, 1);
         selectedPlace.marker.setMap(null);
+        selectedPlace = null;
         document.getElementById('place-details').classList.add('hidden');
     }
 }
@@ -175,7 +205,7 @@ async function savePlaceDetails(formData) {
     submitButton.disabled = false;
 }
 
-function initKeywordAutocomplete(input) {
+function initKeywordAutocomplete(input, onComplete, keywordFilter) {
     function closeList() {
         const list = input.parentNode.querySelector('.autocomplete-items');
         if (list !== null) {
@@ -196,13 +226,11 @@ function initKeywordAutocomplete(input) {
         const regExp = new RegExp(escapeRegExp(input.value), 'i');
 
         for (let keyword of keywords) {
-            if (selectedKeywords.indexOf(keyword) === -1 && regExp.test(keyword.label)) {
+            if (keywordFilter(keyword) && regExp.test(keyword.label)) {
                 const option = document.createElement('div');
                 option.innerText = keyword.label;
-
-                const theKeyword = keyword;
                 option.addEventListener('click', () => {
-                    addKeywordFilter(theKeyword);
+                    onComplete(keyword);
                     input.value = '';
                     closeList();
                 })
@@ -228,6 +256,25 @@ async function initUi() {
     document.getElementById('place-details__delete').addEventListener('click', () => {
         deleteSelectedPlace();
     });
+    const editKeywordsEl = document.getElementById('place-details__edit-keywords');
+    editKeywordsEl.addEventListener('click', () => {
+        const keywordsEl = document.getElementById('place-details__keywords');
+        const addKeywordEl = document.getElementById('place-details__add-keyword');
+        if (addKeywordEl.classList.contains('hidden')) {
+            keywordsEl.classList.remove('place-details__keywords--hide-delete');
+            addKeywordEl.classList.remove('hidden');
+            editKeywordsEl.innerText = 'Done';
+        } else {
+            keywordsEl.classList.add('place-details__keywords--hide-delete');
+            addKeywordEl.classList.add('hidden');
+            editKeywordsEl.innerText = 'Edit';
+        }
+    });
+    initKeywordAutocomplete(
+        document.getElementById('place-details__add-keyword'),
+        addKeywordToSelectedPlace,
+        keyword => selectedPlace.keywords.findIndex(k => k.id === keyword.id) === -1
+    );
     
     const editPlaceDetailsEl = document.getElementById('edit-place-details');
     document.getElementById('edit-place-details__close').addEventListener('click', () => {
@@ -251,9 +298,14 @@ async function initUi() {
         filterPlaceMarkers();
     });
 
+    initKeywordAutocomplete(
+        document.getElementById('keyword-search'),
+        addKeywordFilter,
+        keyword => selectedKeywords.indexOf(keyword) === -1
+    );
+
     const response = await keywordPromise;
     keywords = await response.json();
-    initKeywordAutocomplete(document.getElementById('keyword-search'));
 }
 
 async function initMap() {

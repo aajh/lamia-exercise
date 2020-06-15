@@ -9,7 +9,7 @@
         <div id="toolbar">
             <button id="add-place">Add Place</button>
             <input type="text" id="title-search">
-            <div id="keyword-search-container">
+            <div class="keyword-search-container">
                 <input type="text" id="keyword-search">
             </div>
             <div id="selected-keywords"></div>
@@ -22,7 +22,13 @@
             <h2 id="place-details__title"></h2>
             <span id="place-details__description"></span>
             <span id="place-details__opening-hours"></span>
-            <div id="place-details__keywords"></div>
+
+            <h3>Keywords</h3>
+            <button id="place-details__edit-keywords">Edit</button>
+            <div id="place-details__keywords" class="place-details__keywords--hide-delete"></div>
+            <div class="keyword-search-container">
+                <input type="text" id="place-details__add-keyword" class="hidden">
+            </div>
         </div>
         <form id="edit-place-details" class="hidden">
             <button id="edit-place-details__close">X</button>

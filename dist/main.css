@@ -18,7 +18,7 @@ body {
     grid-area: toolbar;
 }
 
-#keyword-search-container {
+.keyword-search-container {
     position: relative;
     display: inline-block;
 }
@@ -48,6 +48,10 @@ body {
 #place-details {
     grid-area: details;
     width: 280px;
+}
+
+.place-details__keywords--hide-delete a {
+    display: none;
 }
 
 #edit-place-details {

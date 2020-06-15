@@ -224,7 +224,7 @@ app.post('/keywords/:id/places/:placeId', (req, res) => {
         return;
     }
 
-    keyword.places.push(req.parmas.placeId);
+    keyword.places.push(req.params.placeId);
     res.json(keyword);
 });
 
