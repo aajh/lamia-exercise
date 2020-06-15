@@ -10,11 +10,13 @@
             <button id="add-place">Add Place</button>
             <input type="text" id="title-search">
             <div class="keyword-search-container">
-                <input type="text" id="keyword-search">
+                <input type="text" id="keyword-search" autocomplete="off">
             </div>
             <div id="selected-keywords"></div>
         </div>
+
         <div id="map"></div>
+
         <div id="place-details" class="hidden">
             <button id="place-details__close">X</button>
             <button id="place-details__edit">Edit</button>
@@ -26,10 +28,11 @@
             <h3>Keywords</h3>
             <button id="place-details__edit-keywords">Edit</button>
             <div id="place-details__keywords" class="place-details__keywords--hide-delete"></div>
-            <div class="keyword-search-container">
-                <input type="text" id="place-details__add-keyword" class="hidden">
-            </div>
+            <form id="place-details__add-keyword-form" class="keyword-search-container">
+                <input type="text" id="place-details__add-keyword" class="hidden" autocomplete="off">
+            </form>
         </div>
+
         <form id="edit-place-details" class="hidden">
             <button id="edit-place-details__close">X</button>
 

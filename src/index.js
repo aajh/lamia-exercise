@@ -73,6 +73,27 @@ async function addKeywordToSelectedPlace(keyword) {
     }
 }
 
+async function createAndAddKeywordToSelectedPlace(keywordLabel) {
+    const existingKeyword = keywords.find(k => k.label === keywordLabel);
+    if (existingKeyword) {
+        // Add existing keyword, if it has not been added
+        if (selectedPlace.keywords.findIndex(k => k.id === existingKeyword.id) === -1) {
+            addKeywordToSelectedPlace(existingKeyword);
+        }
+    } else {
+        const response = await fetch('/keywords', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ label: keywordLabel })
+        });
+        const keyword = await response.json();
+        keywords.push(keyword);
+        addKeywordToSelectedPlace(keyword);
+    }
+}
+
 async function removeKeywordFromSelectedPlace(keyword) {
     const response = await fetch(`/keywords/${keyword.id}/places/${selectedPlace.id}`, {
         method: 'DELETE'
@@ -275,6 +296,14 @@ async function initUi() {
         addKeywordToSelectedPlace,
         keyword => selectedPlace.keywords.findIndex(k => k.id === keyword.id) === -1
     );
+    document.getElementById('place-details__add-keyword-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const input = document.getElementById('place-details__add-keyword');
+        const keywordLabel = input.value;
+        createAndAddKeywordToSelectedPlace(keywordLabel);
+        input.value = '';
+        input.dispatchEvent(new Event('input')); // Clear the autocomplete list
+    });
     
     const editPlaceDetailsEl = document.getElementById('edit-place-details');
     document.getElementById('edit-place-details__close').addEventListener('click', () => {
