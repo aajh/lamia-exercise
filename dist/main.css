@@ -1,5 +1,6 @@
 html, body {
     font-family: Verdana, sans-serif;
+    font-size: 1em;
     height: 100%;
     margin: 0;
     padding: 0;
@@ -14,9 +15,27 @@ body {
         "details map";
 }
 
-#toolbar {
-    grid-area: toolbar;
+input {
+    border: 1px solid transparent;
+    background-color: #f1f1f1;
+    padding: 10px;
 }
+
+button, input[type=submit] {
+    cursor: pointer;
+    background: #1e90ff;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 1em;
+    outline: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
 
 .keyword-search-container {
     position: relative;
@@ -30,36 +49,142 @@ body {
     right: 0;
     z-index: 99;
     background-color: white;
+    border: 1px solid #d4d4d4;
 }
 
 .autocomplete-items div {
     cursor: pointer;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #d4d4d4;
 }
 
 .autocomplete-items div:hover {
     background-color: #eaeaea; 
 }
 
+
+#toolbar {
+    grid-area: toolbar;
+    display: flex;
+    padding: 16px 20px 16px 20px;
+    align-items: center;
+}
+
+#toolbar > * {
+    margin-right: 16px;
+}
+
+#toolbar > *:last-child, #selected-keywords {
+    margin-right: 0;
+}
+
+#filter-open-places {
+    margin-right: 6px;
+}
+
+#selected-keywords span {
+    margin-right: 6px;
+    background-color: #1e90ff;
+    color: white;
+    padding: 8px;
+    font-size: 0.75em;
+}
+
+#selected-keywords span:last-child {
+    margin-right: 0;
+}
+
+#selected-keywords span a {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+
 #map {
     height: 100%;
     grid-area: map;
 }
 
+
 #place-details {
     grid-area: details;
-    width: 280px;
+    width: 260px;
+    padding: 20px;
+}
+
+#place-details__close {
+    float: right;
+}
+
+#place-details__title {
+    font-size: 1.5em;
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+#place-details__description {
+    margin-bottom: 4px;
+}
+
+#place-details__opening-hours {
+    margin-bottom: 1.2em;
+}
+
+#place-details__keyword-title {
+    display: flex;
+    align-items: center;
+}
+
+#place-details__keyword-title h3 {
+    margin-right: 6px;
+}
+
+#place-details__keywords {
+    display: flex;
+    margin-bottom: 1em;
+}
+
+#place-details__keywords span {
+    margin-right: 6px;
+    background-color: #1e90ff;
+    color: white;
+    padding: 8px;
+    font-size: 0.75em;
+}
+
+#place-details__keywords span:last-child {
+    margin-right: 0;
+}
+
+#place-details__keywords span a {
+    margin-left: 5px;
+    cursor: pointer;
 }
 
 .place-details__keywords--hide-delete a {
     display: none;
 }
 
+
 #edit-place-details {
     grid-area: details;
-    width: 280px;
+    width: 260px;
+    padding: 20px;
     background: white;
+    display: flex;
+    flex-direction: column;
 }
 
-.hidden {
-    display: none;
+#edit-place-details__close {
+    align-self: flex-end;
+}
+
+#edit-place-details label {
+    margin-top: 12px;
+    margin-bottom: 2px;
+}
+
+#edit-place-details input[type=submit] {
+    margin-top: 18px;
 }
