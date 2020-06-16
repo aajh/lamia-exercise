@@ -10,6 +10,11 @@ export let keywords = [];
 export let selectedKeywords = [];
 let places = [];
 let titleRegExp = null;
+let shouldFilterOpenPlaces = false;
+
+export function setShouldFilterOpenPlaces(should) {
+    shouldFilterOpenPlaces = should;
+}
 
 function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
@@ -27,9 +32,39 @@ function createMarker(place) {
     });
 }
 
+function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+function isPlaceOpen(place) {
+    const now = new Date();
+
+    const start = new Date();
+    start.setHours(place.openingHours.start.substring(0,2));
+    start.setMinutes(place.openingHours.start.substring(3,5));
+
+    const end = new Date();
+    end.setHours(place.openingHours.end.substring(0,2));
+    end.setMinutes(place.openingHours.end.substring(3,5));
+
+    if (start <= end) {
+        return start <= now && now <= end;
+    } else {
+        // Either start or end is on another day
+
+        const newStart = addDays(start, -1);
+        const newEnd = addDays(end, 1);
+
+        return newStart <= now && now <= end || start <= now && now <= newEnd;
+    }
+}
+
 export function filterPlaceMarkers() {
     for (let place of places) {
         const titleFilter = titleRegExp === null || titleRegExp.test(place.title);
+        const isOpenFilter = shouldFilterOpenPlaces ? isPlaceOpen(place) : true;
 
         let keywordFilter = selectedKeywords.length === 0;
         for (let keyword of selectedKeywords) {
@@ -39,7 +74,7 @@ export function filterPlaceMarkers() {
             }
         }
 
-        if (titleFilter && keywordFilter) {
+        if (titleFilter && isOpenFilter && keywordFilter) {
             place.marker.setMap(map);
         } else {
             place.marker.setMap(null);

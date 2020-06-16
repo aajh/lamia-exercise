@@ -33,6 +33,19 @@ const places = [
             start: '10:00',
             end: '20:00'
         }
+    },
+    {
+        id: '91965d7a-8da1-400d-96d3-6740e71823be',
+        title: 'Kämp',
+        description: 'Hotel',
+        position: {
+            lat: 60.1680,
+            lng: 24.9462
+        },
+        openingHours: {
+            start: '23:00',
+            end: '08:00'
+        }
     }
 ];
 

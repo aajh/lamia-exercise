@@ -1,4 +1,4 @@
-import { initKeywordAutocomplete, selectedKeywords, changeTitleRegExp, filterPlaceMarkers } from './index';
+import { initKeywordAutocomplete, selectedKeywords, changeTitleRegExp, filterPlaceMarkers, setShouldFilterOpenPlaces } from './index';
 import { hidePlaceDetails } from './placeDetails';
 import { showEditPlaceDetails } from './editPlaceDetails';
 
@@ -18,6 +18,12 @@ export function initToolbar() {
         addKeywordFilter,
         keyword => selectedKeywords.indexOf(keyword) === -1
     );
+
+    const filterOpenPlaces = document.getElementById('filter-open-places');
+    filterOpenPlaces.addEventListener('change', () => {
+        setShouldFilterOpenPlaces(filterOpenPlaces.checked);
+        filterPlaceMarkers();
+    });
 }
 
 function addKeywordFilter(keyword) {
