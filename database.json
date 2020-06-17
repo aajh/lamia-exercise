@@ -3,6 +3,6 @@
     "production": {
         "driver": "pg",
         "url": {"ENV": "DATABASE_URL"},
-        "ssl": "true"
+        "ssl": { "rejectUnauthorized": false }
     }
 }
