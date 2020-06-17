@@ -1,0 +1,8 @@
+{
+    "dev": {"ENV": "DEV_DATABASE_URL"},
+    "production": {
+        "driver": "pg",
+        "url": {"ENV": "DATABASE_URL"},
+        "ssl": "true"
+    }
+}

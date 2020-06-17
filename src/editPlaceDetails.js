@@ -1,3 +1,4 @@
+import { places, createMarker } from './index';
 import { getSelectedPlace, showPlaceDetails } from './placeDetails';
 
 export function initEditPlaceDetails() {

@@ -67,11 +67,13 @@ button, input[type=submit] {
 #toolbar {
     grid-area: toolbar;
     display: flex;
-    padding: 16px 20px 16px 20px;
+    flex-wrap: wrap;
+    padding: 0 20px 16px 20px;
     align-items: center;
 }
 
 #toolbar > * {
+    margin-top: 16px;
     margin-right: 16px;
 }
 
@@ -80,6 +82,7 @@ button, input[type=submit] {
 }
 
 #filter-open-places {
+    margin-top: 20px;
     margin-right: 6px;
 }
 

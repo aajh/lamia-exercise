@@ -8,7 +8,7 @@ const initialMapZoom = 13;
 let map = null;
 export let keywords = [];
 export let selectedKeywords = [];
-let places = [];
+export let places = [];
 let titleRegExp = null;
 let shouldFilterOpenPlaces = false;
 
@@ -20,7 +20,7 @@ function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function createMarker(place) {
+export function createMarker(place) {
     place.marker = new google.maps.Marker({
         position: place.position,
         map,
@@ -137,6 +137,8 @@ async function initUi() {
 }
 
 async function initMap() {
+    const responsePromise = fetch('/places');
+
     initUi();
 
     map = new google.maps.Map(document.getElementById("map"), {
@@ -146,7 +148,7 @@ async function initMap() {
         zoomControl: true
     });
 
-    const response = await fetch(`/places`);
+    const response = await responsePromise;
     places = await response.json();
 
     for (let place of places) {

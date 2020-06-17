@@ -1,4 +1,5 @@
 const express = require('express');
+const pg = require('pg');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
@@ -6,181 +7,162 @@ const app = express();
 
 app.use(express.json());
 
+const router = require("express-promise-router")();
+const pool = new pg.Pool({
+    connectionString: process.env[process.env.NODE_ENV === 'production' ? 'DATABASE_URL' : 'DEV_DATABASE_URL']
+});
 
-const places = [
-    {
-        id: 'f92e2a09-fa07-4f7d-b02c-883a81dba496',
-        title: 'Central Railway Station',
-        description: 'Railway station',
-        position: {
-            lat: 60.1712,
-            lng: 24.9415
-        },
-        openingHours: {
-            start: '04:00',
-            end: '01:00'
-        }
-    },
-    {
-        id: '56487fc1-398a-4c8d-ab1b-b59fec68ac1b',
-        title: 'Stockmann',
-        description: 'Department store',
-        position: {
-            lat: 60.1683,
-            lng: 24.9421
-        },
-        openingHours: {
-            start: '10:00',
-            end: '20:00'
-        }
-    },
-    {
-        id: '91965d7a-8da1-400d-96d3-6740e71823be',
-        title: 'Kämp',
-        description: 'Hotel',
-        position: {
-            lat: 60.1680,
-            lng: 24.9462
-        },
-        openingHours: {
-            start: '23:00',
-            end: '08:00'
-        }
-    }
-];
 
 function checkPlaceRequestBody(body) {
     const { title, description, position, openingHours } = body;
     const isInvalid = !title || !description
         || !position || !position.lat || !position.lng
         || !openingHours || !openingHours.start || !openingHours.end
-        || typeof title !== 'string'
+        || typeof title !== 'string' || title.length > 512
         || typeof description !== 'string'
         || typeof position.lat !== 'number'
         || typeof position.lng !== 'number'
-        || typeof openingHours.start !== 'string'
-        || typeof openingHours.end !== 'string'
+        || typeof openingHours.start !== 'string' || openingHours.start.length !== 5
+        || typeof openingHours.end !== 'string' || openingHours.end.length !== 5
     return isInvalid;
 }
 
-app.get('/places', (req, res) => {
-    res.json(places.map(p => ({ ...p, keywords: getKeywordsForPlace(p.id) })));
-});
-
-app.get('/places/:id', (req, res) => {
-    const place = places.find(p => p.id === req.params.id);
-
-    if (place) {
-        res.json({ ...place, keywords: getKeywordsForPlace(place.id) });
-    } else {
-        res.status(404).json({ error: `place ${req.params.id} not found` });
-    }
-});
-
-app.post('/places', (req, res) => {
-    if (req.body === undefined) {
-        res.status(400).json({ error: 'invalid request' });
-        return
-    }
-
-    const { title, description, position, openingHours } = req.body;
-    const isInvalid = checkPlaceRequestBody(req.body);
-    if (isInvalid) {
-        res.status(400).json({ error: 'invalid request' });
-        return;
-    }
-
-    const place = {
-        id: uuidv4(),
+async function transformSqlPlace(client, { id, title, description, lat, lng, opening_hours_start, opening_hours_end}) {
+    const keywords = await getKeywordsForPlace(client, id);
+    return {
+        id,
         title,
         description,
         position: {
-            lat: position.lat,
-            lng: position.lng
+            lat,
+            lng
         },
         openingHours: {
-            start: openingHours.start,
-            end: openingHours.end
-        }
-    };
-    places.push(place);
-
-    res.json({ ...place, keywords: [] });
-});
-
-app.put('/places/:id', (req, res) => {
-    const place = places.find(p => p.id === req.params.id);
-    if (!place) {
-        res.status(404).json({ error: `place ${req.params.id} not found` });
-        return;
+            start: opening_hours_start,
+            end: opening_hours_end
+        },
+        keywords
     }
-
-    const isInvalid = checkPlaceRequestBody(req.body);
-    if (isInvalid) {
-        res.status(400).json({ error: 'invalid request' });
-        return;
-    }
-
-    const { title, description, position, openingHours } = req.body;
-    place.title = title;
-    place.description = description;
-    place.position = {
-        lat: position.lat,
-        lng: position.lng
-    };
-    place.openingHours = {
-        start: openingHours.start,
-        end: openingHours.end
-    };
-
-    res.json({ place, keywords: getKeywordsForPlace(place.id) });
-});
-
-app.delete('/places/:id', (req, res) => {
-    const index = places.findIndex(p => p.id === req.params.id);
-    if (index !== -1) {
-        places.splice(index, 1);
-        res.status(200).end();
-    } else {
-        res.status(404).json({ error: `place ${req.params.id} not found` });
-    }
-});
-
-
-const keywords = [
-    {
-        id: 'c1406745-37bd-4da3-99ec-b40829e7acf2',
-        label: 'Transit',
-        places: ['f92e2a09-fa07-4f7d-b02c-883a81dba496']
-    },
-    {
-        id: 'd7b5256e-7c62-48ae-ae87-6a08a9210882',
-        label: 'Store',
-        places: ['56487fc1-398a-4c8d-ab1b-b59fec68ac1b']
-    }
-];
-
-function getKeywordsForPlace(placeId) {
-    return keywords
-        .filter(k => k.places.indexOf(placeId) !== -1)
-        .map(({ id, label }) => ({ id, label }));
 }
 
-app.get('/keywords', (req, res) => {
-    res.json(keywords);
+router.get('/places', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows: sqlPlaces } = await client.query('SELECT * FROM places');
+        const places = await Promise.all(sqlPlaces.map(p => transformSqlPlace(client, p)));
+        res.json(places);
+    } finally {
+        client.release();
+    }
 });
 
-app.get('/keywords/:id', (req, res) => {
-    const keyword = keywords.find(k => k.id === req.params.id);
+router.get('/places/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows } = await client.query('SELECT * FROM places WHERE id = $1', [req.params.id]);
+        if (rows.length > 0) {
+            res.json(await transformSqlPlace(client, rows[0]));
+        } else {
+            res.status(404).json({ error: `place ${req.params.id} not found` });
+        }
+    } finally {
+        client.release();
+    }
+});
 
-    if (keyword) {
-        res.json(keyword);
+router.post('/places', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        if (req.body === undefined) {
+            res.status(400).json({ error: 'invalid request' });
+            return
+        }
+
+        const { title, description, position, openingHours } = req.body;
+        const isInvalid = checkPlaceRequestBody(req.body);
+        if (isInvalid) {
+            res.status(400).json({ error: 'invalid request' });
+            return;
+        }
+
+        const id = uuidv4();
+
+        const { rows } = await client.query(`
+            INSERT INTO places(id, title, description, lat, lng, opening_hours_start, opening_hours_end)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *`,
+            [id, title, description, position.lat, position.lng, openingHours.start, openingHours.end]
+        );
+
+        res.json(await transformSqlPlace(client, rows[0]));
+    } finally {
+        client.release();
+    }
+});
+
+router.put('/places/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows: existsRows } = await client.query('SELECT id FROM places WHERE id = $1', [req.params.id]);
+        if (existsRows.length === 0) {
+            res.status(404).json({ error: `place ${req.params.id} not found` });
+            return;
+        }
+
+        const isInvalid = checkPlaceRequestBody(req.body);
+        if (isInvalid) {
+            res.status(400).json({ error: 'invalid request' });
+            return;
+        }
+
+        const { title, description, position, openingHours } = req.body;
+
+        const { rows } = await client.query(`
+            UPDATE places
+            SET title = $1, description = $2, lat = $3, lng = $4, opening_hours_start = $5, opening_hours_end = $6
+            WHERE id = $7
+            RETURNING *`,
+            [title, description, position.lat, position.lng, openingHours.start, openingHours.end, req.params.id]
+        );
+
+        res.json(await transformSqlPlace(client, rows[0]));
+    } finally {
+        client.release();
+    }
+});
+
+router.delete('/places/:id', async (req, res) => {
+    await pool.query('DELETE FROM places WHERE id = $1', [req.params.id]);
+    res.status(200).end();
+});
+
+
+async function getKeywordsForPlace(client, placeId) {
+    const { rows } = await client.query(`
+        SELECT keyword_id as id, label
+        FROM keyword_places
+        LEFT JOIN keywords ON keyword_id = keywords.id
+        WHERE place_id = $1
+    `, [placeId]);
+
+    return rows;
+}
+
+router.get('/keywords', async (req, res) => {
+    const { rows } = await pool.query('SELECT * FROM keywords');
+    res.json(rows);
+});
+
+router.get('/keywords/:id', async (req, res) => {
+    const { rows } = await pool.query('SELECT * FROM keywords WHERE id = $1', [req.params.id]);
+    if (rows.length > 0) {
+        res.json(rows[0]);
     } else {
         res.status(404).json({ error: `keyword ${req.params.id} not found` });
     }
 });
 
-app.post('/keywords', (req, res) => {
+router.post('/keywords', async (req, res) => {
     if (req.body === undefined) {
         res.status(400).json({ error: 'invalid request' });
         return
@@ -192,69 +174,59 @@ app.post('/keywords', (req, res) => {
         return
     }
 
-    const keyword = {
-        id: uuidv4(),
-        label,
-        places: []
-    }
-    keywords.push(keyword);
+    const id = uuidv4();
 
-    res.json(keyword);
+    await pool.query('INSERT INTO keywords(id, label) VALUES ($1, $2)', [id, label])
+
+    res.json({ id, label });
 });
 
-app.put('/keywords/:id', (req, res) => {
-    const keyword = keywords.find(k => k.id === req.params.id);
-    if (!keyword) {
-        res.status(404).json({ error: `keyword ${req.params.id} not found` });
-        return;
-    }
+router.put('/keywords/:id', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows } = await client.query('SELECT id FROM keywords WHERE id = $1', [req.params.id]);
+        if (rows.length === 0) {
+            res.status(404).json({ error: `keyword ${req.params.id} not found` });
+            return;
+        }
 
-    const { label } = req.body;
-    if (!label || typeof label !== 'string') {
-        res.status(400).json({ error: 'invalid request' });
-        return
-    }
+        const { label } = req.body;
+        if (!label || typeof label !== 'string') {
+            res.status(400).json({ error: 'invalid request' });
+            return
+        }
 
-    keyword.label = label;
+        await client.query('UPDATE keywords SET label = $1 WHERE id = $2', [label, req.params.id]);
 
-    res.json(keyword);
-});
-
-app.delete('/keywords/:id', (req, res) => {
-    const index = keywords.findIndex(k => k.id === req.params.id);
-    if (index !== -1) {
-        keywords.splice(index, 1);
-        res.status(200).end();
-    } else {
-        res.status(404).json({ error: `keyword ${req.params.id} not found` });
+        res.json({ id: req.params.id, label });
+    } finally {
+        client.release();
     }
 });
 
-app.post('/keywords/:id/places/:placeId', (req, res) => {
-    const keyword = keywords.find(k => k.id === req.params.id);
-    if (!keyword) {
-        res.status(404).json({ error: `keyword ${req.params.id} not found` });
-        return;
-    }
-
-    keyword.places.push(req.params.placeId);
-    res.json(keyword);
-});
-
-app.delete('/keywords/:id/places/:placeId', (req, res) => {
-    const keyword = keywords.find(k => k.id === req.params.id);
-    if (!keyword) {
-        res.status(404).json({ error: `keyword ${req.params.id} not found` });
-        return;
-    }
-
-    const index = keyword.places.findIndex(id => id === req.params.placeId);
-    if (index !== -1) {
-        keyword.places.splice(index, 1);
-    }
+router.delete('/keywords/:id', async (req, res) => {
+    await pool.query('DELETE FROM keywords WHERE id = $1', req.params.id);
     res.status(200).end();
 });
 
+router.post('/keywords/:id/places/:placeId', async (req, res) => {
+    await pool.query(
+        'INSERT INTO keyword_places(keyword_id, place_id) VALUES ($1, $2)',
+        [req.params.id, req.params.placeId]
+    );
+    res.status(200).end();
+});
+
+router.delete('/keywords/:id/places/:placeId', async (req, res) => {
+    await pool.query(
+        'DELETE FROM keyword_places WHERE keyword_id = $1 AND place_id = $2',
+        [req.params.id, req.params.placeId]
+    );
+    res.status(200).end();
+});
+
+
+app.use(router);
 app.use(express.static('dist'));
 app.use((err, req, res, next) => {
     console.error(err);

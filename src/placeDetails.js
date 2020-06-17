@@ -1,4 +1,4 @@
-import { keywords, initKeywordAutocomplete } from './index'
+import { keywords, places, initKeywordAutocomplete } from './index'
 import { showEditPlaceDetails } from './editPlaceDetails';
 
 let selectedPlace = null;
