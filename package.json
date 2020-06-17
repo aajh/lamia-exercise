@@ -8,9 +8,10 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
+    "build": "webpack --config webpack.prod.config.js",
+    "build-dev": "webpack --config webpack.dev.config.js",
     "start": "node .",
-    "watch": "nodemon --watch src -e js --exec npm run build"
+    "watch": "nodemon --watch src -e js --exec npm run build-dev"
   },
   "author": "Aapo Hanski",
   "license": "ISC",
