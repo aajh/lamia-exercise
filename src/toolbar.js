@@ -1,4 +1,4 @@
-import { initKeywordAutocomplete, selectedKeywords, changeTitleRegExp, filterPlaceMarkers, setShouldFilterOpenPlaces } from './index';
+import { initKeywordAutocomplete, changeTitleRegExp, setShouldFilterOpenPlaces, isKeywordSelected, addSelectedKeyword, removeSelectedKeyword } from './index';
 import { hidePlaceDetails } from './placeDetails';
 import { showEditPlaceDetails } from './editPlaceDetails';
 
@@ -16,18 +16,17 @@ export function initToolbar() {
     initKeywordAutocomplete(
         document.getElementById('keyword-search'),
         addKeywordFilter,
-        keyword => selectedKeywords.indexOf(keyword) === -1
+        isKeywordSelected
     );
 
     const filterOpenPlaces = document.getElementById('filter-open-places');
     filterOpenPlaces.addEventListener('change', () => {
         setShouldFilterOpenPlaces(filterOpenPlaces.checked);
-        filterPlaceMarkers();
     });
 }
 
 function addKeywordFilter(keyword) {
-    selectedKeywords.push(keyword);
+    addSelectedKeyword(keyword);
     const span = document.createElement('span');
     span.innerText = keyword.label;
 
@@ -35,12 +34,9 @@ function addKeywordFilter(keyword) {
     closeLink.innerText = 'X';
     closeLink.addEventListener('click', () => {
         span.parentNode.removeChild(span);
-        const index = selectedKeywords.indexOf(keyword);
-        selectedKeywords.splice(index, 1);
-        filterPlaceMarkers();
+        removeSelectedKeyword(keyword);
     });
     span.appendChild(closeLink);
 
     document.getElementById('selected-keywords').appendChild(span);
-    filterPlaceMarkers();
 }

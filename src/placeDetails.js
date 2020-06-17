@@ -1,10 +1,19 @@
-import { keywords, places, initKeywordAutocomplete } from './index'
+import { initKeywordAutocomplete, filterPlaceMarkers, deletePlace, findKeywordByLabel, addKeyword } from './index'
 import { showEditPlaceDetails } from './editPlaceDetails';
 
 let selectedPlace = null;
 
 export function getSelectedPlace() {
     return selectedPlace;
+}
+
+export function updateSelectedPlace(place) {
+    for (let key of Object.keys(place)) {
+        selectedPlace[key] = place[key];
+    }
+    selectedPlace.marker.setPosition(place.position);
+    selectedPlace.marker.setTitle(place.title);
+    filterPlaceMarkers();
 }
 
 export function initPlaceDetails() {
@@ -93,11 +102,12 @@ async function addKeywordToSelectedPlace(keyword) {
     if (response.ok) {
         selectedPlace.keywords.push(keyword);
         showPlaceDetails(selectedPlace);
+        filterPlaceMarkers();
     }
 }
 
 async function createAndAddKeywordToSelectedPlace(keywordLabel) {
-    const existingKeyword = keywords.find(k => k.label === keywordLabel);
+    const existingKeyword = findKeywordByLabel(keywordLabel);
     if (existingKeyword) {
         // Add existing keyword, if it has not been added
         if (selectedPlace.keywords.findIndex(k => k.id === existingKeyword.id) === -1) {
@@ -112,7 +122,7 @@ async function createAndAddKeywordToSelectedPlace(keywordLabel) {
             body: JSON.stringify({ label: keywordLabel })
         });
         const keyword = await response.json();
-        keywords.push(keyword);
+        addKeyword(keyword);
         addKeywordToSelectedPlace(keyword);
     }
 }
@@ -125,6 +135,7 @@ async function removeKeywordFromSelectedPlace(keyword) {
         const index = selectedPlace.keywords.findIndex(k => k.id === keyword.id);
         selectedPlace.keywords.splice(index, 1);
         showPlaceDetails(selectedPlace);
+        filterPlaceMarkers();
     }
 }
 
@@ -133,9 +144,7 @@ async function deleteSelectedPlace() {
         method: 'DELETE'
     });
     if (response.ok) {
-        const index = places.findIndex(p => p.id == selectedPlace.id);
-        places.splice(index, 1);
-        selectedPlace.marker.setMap(null);
+        deletePlace(selectedPlace.id);
         selectedPlace = null;
         document.getElementById('place-details').classList.add('hidden');
     }

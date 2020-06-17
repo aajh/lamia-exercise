@@ -6,14 +6,51 @@ const initialMapPosition = { lat: 60.171, lng: 24.941 };
 const initialMapZoom = 13;
 
 let map = null;
-export let keywords = [];
-export let selectedKeywords = [];
-export let places = [];
+let keywords = [];
+let selectedKeywords = [];
+let places = [];
 let titleRegExp = null;
 let shouldFilterOpenPlaces = false;
 
 export function setShouldFilterOpenPlaces(should) {
     shouldFilterOpenPlaces = should;
+    filterPlaceMarkers();
+}
+
+export function createNewPlace(newPlace) {
+    places.push(newPlace);
+    createMarker(newPlace);
+    filterPlaceMarkers();
+}
+
+export function deletePlace(id) {
+    const index = places.findIndex(p => p.id == id);
+    const place = places[index];
+    places.splice(index, 1);
+    place.marker.setMap(null);
+}
+
+export function findKeywordByLabel(label) {
+    return keywords.find(k => k.label === label);
+}
+
+export function addKeyword(keyword) {
+    keywords.push(keyword);
+}
+
+export function isKeywordSelected(keyword) {
+    return selectedKeywords.indexOf(keyword) === -1;
+}
+
+export function addSelectedKeyword(keyword) {
+    selectedKeywords.push(keyword);
+    filterPlaceMarkers();
+}
+
+export function removeSelectedKeyword(keyword) {
+    const index = selectedKeywords.indexOf(keyword);
+    selectedKeywords.splice(index, 1);
+    filterPlaceMarkers();
 }
 
 function escapeRegExp(string) {
@@ -87,7 +124,7 @@ export function changeTitleRegExp(search) {
     filterPlaceMarkers();
 }
 
-export function initKeywordAutocomplete(input, onComplete, keywordFilter) {
+export function initKeywordAutocomplete(input, onComplete, keywordExistsFilter) {
     function closeList() {
         const list = input.parentNode.querySelector('.autocomplete-items');
         if (list !== null) {
@@ -108,7 +145,7 @@ export function initKeywordAutocomplete(input, onComplete, keywordFilter) {
         const regExp = new RegExp(escapeRegExp(input.value), 'i');
 
         for (let keyword of keywords) {
-            if (keywordFilter(keyword) && regExp.test(keyword.label)) {
+            if (keywordExistsFilter(keyword) && regExp.test(keyword.label)) {
                 const option = document.createElement('div');
                 option.innerText = keyword.label;
                 option.addEventListener('click', () => {

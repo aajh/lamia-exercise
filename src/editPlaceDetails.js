@@ -1,5 +1,5 @@
-import { places, createMarker, filterPlaceMarkers } from './index';
-import { getSelectedPlace, showPlaceDetails } from './placeDetails';
+import { createNewPlace } from './index';
+import { getSelectedPlace, showPlaceDetails, updateSelectedPlace } from './placeDetails';
 
 export function initEditPlaceDetails() {
     const editPlaceDetailsEl = document.getElementById('edit-place-details');
@@ -63,12 +63,7 @@ async function savePlaceDetails(formData) {
         });
 
         if (response.ok) {
-            for (let key of Object.keys(place)) {
-                selectedPlace[key] = place[key];
-            }
-            selectedPlace.marker.setPosition(place.position);
-            selectedPlace.marker.setTitle(place.title);
-            filterPlaceMarkers();
+            updateSelectedPlace(place);
             document.getElementById('edit-place-details').classList.add('hidden');
             showPlaceDetails(selectedPlace);
         }
@@ -83,9 +78,7 @@ async function savePlaceDetails(formData) {
         });
         if (response.ok) {
             const newPlace = await response.json();
-            places.push(newPlace);
-            createMarker(newPlace);
-            filterPlaceMarkers();
+            createNewPlace(newPlace);
             document.getElementById('edit-place-details').classList.add('hidden');
             showPlaceDetails(newPlace);
         }
