@@ -1,4 +1,4 @@
-import { places, createMarker } from './index';
+import { places, createMarker, filterPlaceMarkers } from './index';
 import { getSelectedPlace, showPlaceDetails } from './placeDetails';
 
 export function initEditPlaceDetails() {
@@ -68,6 +68,7 @@ async function savePlaceDetails(formData) {
             }
             selectedPlace.marker.setPosition(place.position);
             selectedPlace.marker.setTitle(place.title);
+            filterPlaceMarkers();
             document.getElementById('edit-place-details').classList.add('hidden');
             showPlaceDetails(selectedPlace);
         }
@@ -84,6 +85,7 @@ async function savePlaceDetails(formData) {
             const newPlace = await response.json();
             places.push(newPlace);
             createMarker(newPlace);
+            filterPlaceMarkers();
             document.getElementById('edit-place-details').classList.add('hidden');
             showPlaceDetails(newPlace);
         }
